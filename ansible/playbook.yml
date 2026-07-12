@@ -1,0 +1,27 @@
+---
+- name: Установка стандартных пакетов
+  hosts: all
+  vars:
+    ssh_key: "{{ lookup('file', '~/.ssh/id_ed25519.pub') }}"
+  roles:
+    - role: default_packages
+  tags:
+    - install_packages
+
+- name: Установка nginx сервера
+  hosts: server
+  vars:
+    ssh_key: "{{ lookup('file', '~/.ssh/id_ed25519.pub') }}"
+  roles:
+    - role: nginx_server
+  tags:
+    - nginx_server 
+
+- name: Установка nginx прокси
+  hosts: proxy
+  vars:
+    ssh_key: "{{ lookup('file', '~/.ssh/id_ed25519.pub') }}"
+  roles:
+    - role: nginx_proxy
+  tags:
+    - nginx_proxy

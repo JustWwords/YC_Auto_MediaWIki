@@ -1,0 +1,8 @@
+---
+# tasks file for default_packages
+- name: Установка стандартных пакетов
+  apt:
+    name: "{{ item }}"
+    state: present
+  loop: 
+    - "{{ packages_to_install }}"

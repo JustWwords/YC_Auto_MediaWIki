@@ -1,0 +1,17 @@
+events {}
+
+http {
+    upstream backend_servers {
+    {% for host in groups['server'] %}
+        server {{ hostvars[host]['ansible_host'] }}:80;
+    {% endfor %}
+    }
+
+    server {
+        listen 3000;
+
+        location / {
+            proxy_pass http://backend_servers;
+        }
+    }
+}

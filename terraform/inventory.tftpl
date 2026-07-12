@@ -1,0 +1,20 @@
+---
+nginx:
+  children:
+    server:
+      hosts:
+        vm_1:
+          ansible_host: ${vm_1_ip}
+        vm_2:
+          ansible_host: ${vm_2_ip}
+    proxy:
+      hosts:
+        vm_3:
+          ansible_host: ${vm_3_ip}
+
+  vars:
+    ansible_user: "user"
+    ansible_password: "qwerty"
+    connection_protocol: ssh
+    ansible_become: true
+    ansible_become_method: sudo

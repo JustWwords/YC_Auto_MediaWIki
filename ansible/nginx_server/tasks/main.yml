@@ -1,0 +1,12 @@
+---
+# tasks file for nginx_server
+- name: Установка Nginx
+  apt:
+    name: nginx
+    state: present
+
+- name: Замена веб-страницы
+  ansible.builtin.template:
+    src: index.j2
+    dest: /var/www/html/index.html
+  notify: Restart Nginx
