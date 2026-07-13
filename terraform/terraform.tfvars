@@ -25,5 +25,14 @@ virtual_machines = {
       disk         = 20
       disk_name    = "vm3-boot-disk"
       template     = "fd85bll745cg76f707mq"
+    },
+    "vm-4" = {
+      vm_name      = "vm4"
+      vm_desc      = ""
+      vm_cpu       = 2
+      ram          = 2
+      disk         = 20
+      disk_name    = "vm4-boot-disk"
+      template     = "fd85bll745cg76f707mq"
     }
 }

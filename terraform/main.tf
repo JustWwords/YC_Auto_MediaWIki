@@ -42,19 +42,16 @@ resource "yandex_compute_instance" "virtual_machine" {
  
 }
 
-#Можно и лучше, сделать циклом, но как смог
 resource "local_file" "ansible_inventory" {
   content = templatefile("${path.module}/inventory.tftpl", {
-    vm_1_ip = yandex_compute_instance.virtual_machine["vm-1"].network_interface.0.nat_ip_address
-    vm_2_ip = yandex_compute_instance.virtual_machine["vm-2"].network_interface.0.nat_ip_address
-    vm_3_ip = yandex_compute_instance.virtual_machine["vm-3"].network_interface.0.nat_ip_address
+    all_vms = { for k, v in yandex_compute_instance.virtual_machine : k => v.network_interface.0.nat_ip_address }
   })
-
-  filename = "/home/user/Projects/YC Vm/ansible/inventory.yml"
+  filename = "${path.module}/../ansible/inventory.yml"
 }
 
+
 resource "ansible_playbook" "nginx_deployment" {
-  playbook       = "/home/user/Projects/YC Vm/ansible/playbook.yml"
+  playbook       = "${path.module}/../ansible/playbook.yml"
   name           = "localhost" 
 
   depends_on = [local_file.ansible_inventory]
