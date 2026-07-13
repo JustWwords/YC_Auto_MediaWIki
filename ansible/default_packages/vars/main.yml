@@ -5,5 +5,4 @@ packages_to_install:
   - dnsutils
   - wget
   - curl
-  - mc
-  - rsync
+  - nginx

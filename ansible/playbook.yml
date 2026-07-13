@@ -1,4 +1,14 @@
 ---
+- name: Подготовка к подключению
+  hosts: localhost
+  tasks:
+    - name: Добавление машин в known_hosts
+      ansible.builtin.shell: |
+        ssh-keyscan -H {{ hostvars[item]['ansible_host'] }} >> ~/.ssh/known_hosts
+      loop: "{{ groups['all'] }}"
+      failed_when: false
+      changed_when: false
+
 - name: Установка стандартных пакетов
   hosts: all
   vars:
@@ -6,16 +16,7 @@
   roles:
     - role: default_packages
   tags:
-    - install_packages
-
-- name: Установка nginx сервера
-  hosts: server
-  vars:
-    ssh_key: "{{ lookup('file', '~/.ssh/id_ed25519.pub') }}"
-  roles:
-    - role: nginx_server
-  tags:
-    - nginx_server 
+    - default_packages
 
 - name: Установка nginx прокси
   hosts: proxy
@@ -25,3 +26,30 @@
     - role: nginx_proxy
   tags:
     - nginx_proxy
+
+- name: Установка Wiki серверов
+  hosts: server
+  vars:
+    ssh_key: "{{ lookup('file', '~/.ssh/id_ed25519.pub') }}"
+  roles:
+    - role: wiki_server
+  tags:
+    - wiki_server 
+
+- name: Установка Zabbix агентов
+  hosts: server
+  vars:
+    ssh_key: "{{ lookup('file', '~/.ssh/id_ed25519.pub') }}"
+  roles:
+    - role: zabbix_host
+  tags:
+    - zabbix_host
+
+- name: Установка Zabbix сервера
+  hosts: proxy
+  vars:
+    ssh_key: "{{ lookup('file', '~/.ssh/id_ed25519.pub') }}"
+  roles:
+    - role: zabbix_server
+  tags:
+    - zabbix_server

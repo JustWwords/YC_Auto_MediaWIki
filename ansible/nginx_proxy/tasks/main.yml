@@ -1,10 +1,5 @@
 ---
 # tasks file for nginx_proxy
-- name: Установка Nginx
-  apt:
-    name: nginx
-    state: present
-
 - name: Замена конфигурационного файла
   ansible.builtin.template:
     src: nginx_proxy.conf.j2
