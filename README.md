@@ -2,8 +2,6 @@
 
 ## Содержание
 
-Сейчас содержит в себе только ранее созданый репозиторий. Реализовано развёртывание 2 машин с nginx серверов с кастомной страницей и 1 с проксси сервером.
-
 ### Terraform
 Terraform сам создаёт на Yandex Cloud 2+ машины для:
  * Mediaiki 
@@ -13,6 +11,23 @@ Terraform сам создаёт на Yandex Cloud 2+ машины для:
  * Обратный прокси Nginx
  * Zabbix сервер
 
+Так же создаёт inventory.yml для Ansible
 
 ### Ansible
-Ansible настраивает все машины
+Ansible:
+#### default_packages
+ 1. Устанавливаются стандартные пакеты на все машины
+ 
+#### nginx_proxy
+ 2. Устанавливается nginx
+ 3. Создаётся nginx.conf
+ 4. Заменяется nginx.conf 
+
+#### wiki_server
+ 5. Устанавливаются пакеты
+ 6. Устанавливается MediaWiki
+ 7. Настраивается БД PostgreSQL
+ 8. Запрашивается Конфигурация MediaWiki на сервере
+
+#### wiki_server_LS
+ 9. На все машины с wiki добавляется LocalSettings.php

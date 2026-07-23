@@ -28,7 +28,7 @@
     - nginx_proxy
 
 - name: Установка Wiki серверов
-  hosts: server
+  hosts: wiki
   vars:
     ssh_key: "{{ lookup('file', '~/.ssh/id_ed25519.pub') }}"
   roles:
@@ -36,20 +36,46 @@
   tags:
     - wiki_server 
 
-- name: Установка Zabbix агентов
-  hosts: server
-  vars:
-    ssh_key: "{{ lookup('file', '~/.ssh/id_ed25519.pub') }}"
-  roles:
-    - role: zabbix_host
+# LocalSetting.php
+- hosts: wiki
+  become: true
   tags:
-    - zabbix_host
+    - wiki_server
+    - wiki_server_LS
+  vars_prompt:
+    - name: local_file_path
+      prompt: "Введите путь к файлу LocalSettings.php"
+      private: false
+  tasks:
+    - name: Проверка файла
+      ansible.builtin.fail:
+        msg: "Не верный путь к файлу LocalSettings.php. Выполнение прервано."
+      when: local_file_path | basename != 'LocalSettings.php'
+      run_once: true
+      delegate_to: localhost
 
-- name: Установка Zabbix сервера
-  hosts: proxy
-  vars:
-    ssh_key: "{{ lookup('file', '~/.ssh/id_ed25519.pub') }}"
-  roles:
-    - role: zabbix_server
-  tags:
-    - zabbix_server
+    - name: Копирование LocalSettings.php
+      ansible.builtin.copy:
+        src: "{{ local_file_path }}"
+        dest: /var/www/html/mediawiki/mediawiki-1.46.0/LocalSettings.php
+        owner: 502 
+        group: staff
+        mode: '0644'
+
+# - name: Установка Zabbix агентов
+#   hosts: server
+#   vars:
+#     ssh_key: "{{ lookup('file', '~/.ssh/id_ed25519.pub') }}"
+#   roles:
+#     - role: zabbix_host
+#   tags:
+#     - zabbix_host
+
+# - name: Установка Zabbix сервера
+#   hosts: proxy
+#   vars:
+#     ssh_key: "{{ lookup('file', '~/.ssh/id_ed25519.pub') }}"
+#   roles:
+#     - role: zabbix_server
+#   tags:
+#     - zabbix_server

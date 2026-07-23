@@ -1,0 +1,21 @@
+---
+server:
+  children:
+    proxy:
+      hosts:
+        vm_1:
+          ansible_host: 89.169.140.159
+    wiki:
+      hosts:
+        vm_2:
+          ansible_host: 89.169.143.2
+        vm_3:
+          ansible_host: 51.250.15.203
+        vm_4:
+          ansible_host: 84.252.133.146
+  vars:
+    ansible_user: "user"
+    ansible_password: "qwerty"
+    connection_protocol: ssh
+    ansible_become: true
+    ansible_become_method: sudo

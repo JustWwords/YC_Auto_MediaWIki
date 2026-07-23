@@ -50,9 +50,9 @@ resource "local_file" "ansible_inventory" {
 }
 
 
-resource "ansible_playbook" "nginx_deployment" {
-  playbook       = "${path.module}/../ansible/playbook.yml"
-  name           = "localhost" 
+# resource "ansible_playbook" "nginx_deployment" {
+#   playbook       = "${path.module}/../ansible/playbook.yml"
+#   name           = "localhost" 
 
-  depends_on = [local_file.ansible_inventory]
-}
+#   depends_on = [local_file.ansible_inventory]
+# }

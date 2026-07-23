@@ -1,7 +1,9 @@
 ---
 # tasks file for default_packages
 - name: Установка стандартных пакетов
+  become: true
   apt:
+    update_cache: true
     name: "{{ item }}"
     state: present
   loop: 

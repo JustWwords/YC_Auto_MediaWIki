@@ -6,13 +6,21 @@ server:
         vm_1:
           ansible_host: ${all_vms["vm-1"]}
     wiki:
-      hosts:
+      children:
+        mainWiki:
+          hosts:
+            vm_2:
+              ansible_host: ${all_vms["vm-2"]}      
+        backWiki:
+          hosts:
 %{ for name, ip in all_vms ~}
-%{ if name != "vm-1" ~}
-        ${replace(name, "-", "_")}:
-          ansible_host: ${ip}
+%{ if name != "vm-1" && name != "vm-2" ~}
+            ${replace(name, "-", "_")}:
+              ansible_host: ${ip}
 %{ endif ~}
 %{ endfor ~}
+
+
 
   vars:
     ansible_user: "user"
@@ -20,3 +28,5 @@ server:
     connection_protocol: ssh
     ansible_become: true
     ansible_become_method: sudo
+
+

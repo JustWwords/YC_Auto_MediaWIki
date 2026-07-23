@@ -1,7 +1,7 @@
 events {}
 
 http {
-    upstream backend_servers {
+    upstream WikiServer {
     {% for host in groups['server'] %}
         server {{ hostvars[host]['ansible_host'] }}:80;
     {% endfor %}
@@ -11,7 +11,14 @@ http {
         listen 80;
 
         location / {
-            proxy_pass http://backend_servers;
+            proxy_pass http://WikiServer;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        }
+
+        location = / {
+            return 301 http://$host/mediawiki/mediawiki-1.46.0/;
         }
     }
 }

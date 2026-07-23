@@ -1,2 +1,24 @@
 ---
-# vars file for nginx_server
+# Стандартные требуемые пакеты по руководству Media Wiki
+packages_to_install:
+ - php-apcu 
+ - php-intl 
+ - imagemagick 
+ - inkscape 
+ - php-gd 
+ - php-cli 
+ - php-curl 
+ - php-bcmath 
+ - git
+ - postgresql
+ - mariadb-server 
+ - php 
+ - libapache2-mod-php 
+ - php-xml 
+ - php-mbstring
+ - python3-psycopg2
+ - php-pgsql
+ - acl
+ - tar
+ - gzip
+ - unzip
