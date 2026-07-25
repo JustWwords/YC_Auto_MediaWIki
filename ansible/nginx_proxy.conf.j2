@@ -2,9 +2,12 @@ events {}
 
 http {
     upstream WikiServer {
-    {% for host in groups['server'] %}
+        least_conn;
+        {% for host in groups['server'] %}
+        {% if host != 'vm_1' %}
         server {{ hostvars[host]['ansible_host'] }}:80;
-    {% endfor %}
+        {% endif %}
+        {% endfor %}
     }
 
     server {

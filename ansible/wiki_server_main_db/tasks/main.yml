@@ -1,0 +1,54 @@
+---
+- name: Добавление wikiuser в pg_hba.conf
+  community.postgresql.postgresql_pg_hba:
+    dest: /etc/postgresql/17/main/pg_hba.conf
+    contype: host
+    databases: my_wiki
+    users: wikiuser
+    address: all
+    method: md5
+  become: true
+  become_user: postgres
+
+- name: Добавление syncuser в pg_hba.conf
+  community.postgresql.postgresql_pg_hba:
+    dest: /etc/postgresql/17/main/pg_hba.conf
+    contype: host
+    databases: replication
+    users: syncuser
+    address: all
+    method: md5
+  become: true
+  become_user: postgres
+
+- name: Создание пользователя syncuser
+  community.postgresql.postgresql_user:
+    name: syncuser
+    password: "pass123"
+    role_attr_flags: "REPLICATION"
+    state: present
+  become: true
+  become_user: postgres
+
+- name: Установка listen_addresses в postgresql.conf
+  community.postgresql.postgresql_set:
+    name: listen_addresses
+    value: "*"
+  become: true
+  become_user: postgres
+
+- name: Установка wal_level в postgresql.conf
+  community.postgresql.postgresql_set:
+    name: wal_level
+    value: "replica"
+  become: true
+  become_user: postgres
+  notify: Restart PostgreSQL
+
+- name: Установка hot_standby в postgresql.conf
+  community.postgresql.postgresql_set:
+    name: hot_standby
+    value: "on"
+  become: true
+  become_user: postgres
+  notify: Restart PostgreSQL

@@ -1,0 +1,30 @@
+---
+# tasks file for wiki_server_replica_db
+- name: Остановка PostgreSQL
+  ansible.builtin.service:
+    name: postgresql
+    state: stopped
+  become: true
+
+- name: Удаление Базы
+  ansible.builtin.file:
+    path: /var/lib/postgresql/16/main
+    state: absent
+  become: true
+
+- name: Первоначальное клонирование базы
+  ansible.builtin.command: >
+    pg_basebackup -h {{ hostvars['vm_2']['ansible_host'] }} 
+    -D /var/lib/postgresql/16/main 
+    -U syncuser 
+    -P -v -R
+  environment:
+    PGPASSWORD: "pass123"
+  become: true
+  become_user: postgres
+
+- name: Запуск сервиса PostgreSQL
+  ansible.builtin.service:
+    name: postgresql
+    state: started
+  become: true

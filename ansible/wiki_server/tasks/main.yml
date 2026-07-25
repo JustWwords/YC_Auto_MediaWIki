@@ -90,6 +90,4 @@
 
 - name: Ссылка
   ansible.builtin.debug:
-    msg: "Ссылка на главную MediaWiki: http://{{item['ansible_host']}}/mediawiki/mediawiki-1.46.0/"
-  loop: 
-    - "{{ hostvars }}"
+    msg: "Ссылка на главную MediaWiki: http://{{ansible_host}}/mediawiki/mediawiki-1.46.0/"
