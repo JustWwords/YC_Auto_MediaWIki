@@ -1,2 +1,36 @@
 ---
-# tasks file for zabbix_host
+- name: Скачивание репозитория Zabbix 7.4
+  become: true
+  ansible.builtin.get_url:
+    url: https://repo.zabbix.com/zabbix/7.4/release/ubuntu/pool/main/z/zabbix-release/zabbix-release_latest_7.4+ubuntu24.04_all.deb
+    dest: /tmp/zabbix-release.deb
+    mode: '0644'
+
+- name: Установка пакета репозитория Zabbix
+  become: true
+  ansible.builtin.apt:
+    deb: /tmp/zabbix-release.deb
+
+- name: Обновление кэша и установка zabbix-agent
+  become: true
+  ansible.builtin.apt:
+    name: zabbix-agent
+    update_cache: yes
+    state: present
+
+- name: Настройка параметров сервера в zabbix_agentd.conf
+  become: true
+  ansible.builtin.lineinfile:
+    path: /etc/zabbix/zabbix_agentd.conf
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+  loop:
+    - { regexp: '^Server=', line: "Server={{ zabbix_server_ip }}" }
+    - { regexp: '^ServerActive=', line: "ServerActive={{ zabbix_server_ip }}" }
+    - { regexp: '^Hostname=', line: "Hostname={{ ansible_facts['hostname'] }}" }
+
+- name: Включение и перезапуск службы Zabbix Agent
+  ansible.builtin.systemd:
+    name: zabbix-agent
+    state: restarted
+    enabled: yes

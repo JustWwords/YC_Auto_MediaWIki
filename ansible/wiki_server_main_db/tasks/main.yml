@@ -1,23 +1,23 @@
 ---
 - name: Добавление wikiuser в pg_hba.conf
   community.postgresql.postgresql_pg_hba:
-    dest: /etc/postgresql/17/main/pg_hba.conf
+    dest: /etc/postgresql/16/main/pg_hba.conf
     contype: host
     databases: my_wiki
     users: wikiuser
     address: all
-    method: md5
+    method: scram-sha-256
   become: true
   become_user: postgres
 
 - name: Добавление syncuser в pg_hba.conf
   community.postgresql.postgresql_pg_hba:
-    dest: /etc/postgresql/17/main/pg_hba.conf
+    dest: /etc/postgresql/16/main/pg_hba.conf
     contype: host
     databases: replication
     users: syncuser
     address: all
-    method: md5
+    method: scram-sha-256
   become: true
   become_user: postgres
 
@@ -37,13 +37,19 @@
   become: true
   become_user: postgres
 
+- name: Установка wal_log_hints в postgresql.conf
+  community.postgresql.postgresql_set:
+    name: wal_log_hints
+    value: 'on'
+  become: true
+  become_user: postgres
+
 - name: Установка wal_level в postgresql.conf
   community.postgresql.postgresql_set:
     name: wal_level
     value: "replica"
   become: true
   become_user: postgres
-  notify: Restart PostgreSQL
 
 - name: Установка hot_standby в postgresql.conf
   community.postgresql.postgresql_set:
@@ -51,4 +57,8 @@
     value: "on"
   become: true
   become_user: postgres
-  notify: Restart PostgreSQL
+
+- name: Перезагрузка PostgreSQL
+  ansible.builtin.service:
+    name: postgresql
+    state: restarted

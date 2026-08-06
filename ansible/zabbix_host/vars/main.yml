@@ -1,2 +1,4 @@
 ---
 # vars file for zabbix_host
+zabbix_server_ip: "{{ hostvars['vm_1']['ansible_host'] }}"
+zabbix_api_url: "http://{{ hostvars['vm_1']['ansible_host'] }}:8080/api_jsonrpc.php"

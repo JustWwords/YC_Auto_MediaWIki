@@ -1,0 +1,49 @@
+---
+- name: Копирование скрипта бекапа PostgreSQL БД
+  ansible.builtin.template:
+    src:  DB_Backup.sh.j2
+    dest: /home/user/DB_Backup.sh
+    owner: user 
+    group: user
+    mode: '0700'
+
+- name: Копирование скрипта бекапа MediaWiki
+  ansible.builtin.template:
+    src: MediaWiki_Backup.sh.j2
+    dest: /home/user/MediaWiki_Backup.sh
+    owner: user 
+    group: user
+    mode: '0700'
+
+- name: Получение SSH-ключа
+  ansible.builtin.openssh_keypair:
+    path: /home/user/.ssh/id_ed25519
+    type: ed25519
+    owner: user
+    group: user
+    mode: '0600'
+  register: ssh_key_info
+
+- name: Копирование SSH-ключа на хосты
+  ansible.posix.authorized_key:
+    user: user
+    state: present
+    key: "{{ ssh_key_info.public_key }}"
+  delegate_to: "{{ item }}"
+  loop: "{{ groups['wiki'] }}"
+
+- name: Добавление бэкапа PostgreSQL в расписание cron
+  ansible.builtin.cron:
+    name: "Backup PostgreSQL DB"
+    minute: "0"
+    hour: "3"
+    user: user
+    job: "/bin/bash /home/user/DB_Backup.sh my_wiki > /home/user/postgres_backup.log 2>&1"
+
+- name: Добавление бэкапа MediaWiki в расписание cron
+  ansible.builtin.cron:
+    name: "Backup MediaWiki FS"
+    minute: "0"
+    hour: "2"
+    user: user
+    job: "/bin/bash /home/user/MediaWiki_Backup.sh /var/www/mediawiki > /home/user/mediawiki_backup.log 2>&1"

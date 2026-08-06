@@ -9,47 +9,24 @@
   loop: 
     - "{{ packages_to_install }}"
 
-# Скачивание и установка Wiki
-- name: Скачивание MediaWiki
-  ansible.builtin.get_url:
-    url: https://releases.wikimedia.org/mediawiki/1.46/mediawiki-1.46.0.tar.gz
-    dest: /tmp/MediaWiki.tar.gz
-
 - name: Создание директории сервера MediaWiki
   ansible.builtin.file:
     path: /var/lib/mediawiki
     state: directory
 
+# Скачивание и установка Wiki
+- name: Скачивание MediaWiki
+  become: true
+  ansible.builtin.get_url:
+    url: https://releases.wikimedia.org/mediawiki/1.46/mediawiki-1.46.0.tar.gz
+    dest: /var/lib/mediawiki/mediawiki-1.46.0.tar.gz
+
 - name: Извлечение архива MediaWiki
   become: true
   ansible.builtin.unarchive:
-    src: /tmp/MediaWiki.tar.gz
+    src: /var/lib/mediawiki/mediawiki-1.46.0.tar.gz
     dest: /var/lib/mediawiki
     remote_src: true
-
-
-# Настройка MySQL
-# - name: Создание баы данных MySQL
-#   community.mysql.mysql_db:
-#     name: my_wiki
-#     state: present
-#     login_user: root
-#     login_unix_socket: /var/run/mysqld/mysqld.sock
-#     # Если пользователь требует пароль, 
-#     # то можно убрать сокет и добавляем: 
-#     # login_password: "pass123"
-
-# - name: Создание пользователя MySQL
-#   community.mysql.mysql_user:
-#     name: wikiuser
-#     password: pass123    #Обязательно заменить пароль
-#     priv: "my_wiki.*:ALL"
-#     state: present
-#     login_user: root
-#     login_unix_socket: /var/run/mysqld/mysqld.sock
-#     # Если пользователь требует пароль, 
-#     # то можно убрать сокет и добавляем: 
-#     # login_password: "pass123"
 
 # Настройка PostgreSQL
 - name: Создание базы данных PostgreSQL
@@ -79,8 +56,6 @@
   become: true
   become_user: postgres
 
-
-# sudo ln -s /var/lib/mediawiki /var/www/html/mediawiki
 - name: Создание символической ссылки для MediaWiki
   ansible.builtin.file:
     src: /var/lib/mediawiki

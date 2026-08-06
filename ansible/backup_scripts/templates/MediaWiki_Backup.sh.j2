@@ -1,0 +1,59 @@
+#!/bin/bash
+
+set -o pipefail
+
+TARGET_SERVERS=(
+{% for host in groups['wiki'] %}
+    "user@{{ hostvars[host]['ansible_host'] }}"
+{% endfor %}
+)
+
+BACKUP_ROOT="/home/user/backups/mediawiki"
+RETENTION_DAYS=14
+
+DATE=$(date +%Y%m%d_%H%M%S)
+REMOTE_DIR="$1"
+
+log_error() { echo "ERROR [$(date '+%Y-%m-%d %H:%M:%S')]: $1" >&2; }
+log_info()  { echo "INFO  [$(date '+%Y-%m-%d %H:%M:%S')]: $1"; }
+
+backup_host_fs() {
+    local host="$1"
+    local host_name
+    host_name=$(ssh -o ConnectTimeout=5 "${host}" "hostname" 2>/dev/null | tr -d '\r\n[:space:]')
+    local local_dest_dir="${BACKUP_ROOT}/${host_name}"
+    local archive_name="${host_name}_mw_fs_${DATE}.tar.gz"
+
+    log_info "=== ${host} ==="
+
+    ssh -o ConnectTimeout=5 "${host}" "[ -d '${REMOTE_DIR}' ]"
+    if [ $? -ne 0 ]; then
+        log_error "Хост ${host} недоступен или директория ${REMOTE_DIR} на нем не доступна."
+        return 1
+    fi
+
+    mkdir -p "${local_dest_dir}"
+
+    log_info "Скачивание архива ФС с ${host}..."
+    ssh "${host}" "tar -czf - -C '${REMOTE_DIR}' ." 2>/dev/null > "${local_dest_dir}/${archive_name}"
+    
+    if [ $? -ne 0 ]; then
+        log_error "Ошибка при архивации или передаче данных с хоста ${host}."
+        rm -f "${local_dest_dir}/${archive_name}"
+        return 1
+    fi
+
+    log_info "Очистка бэкапов старше ${RETENTION_DAYS} дней..."
+    find "${local_dest_dir}" -name "${host_name}_mw_fs_*.tar.gz" -mtime +"${RETENTION_DAYS}" -delete
+    
+    log_info "Бэкап ФС для ${host} успешно завершен."
+}
+
+if [ -z "${REMOTE_DIR}" ]; then
+    log_error "Не указан путь к удаленной директории MediaWiki."
+    exit 1
+fi
+
+for server in "${TARGET_SERVERS[@]}"; do
+    backup_host_fs "${server}"
+done

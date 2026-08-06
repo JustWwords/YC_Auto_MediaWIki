@@ -1,0 +1,60 @@
+#!/bin/bash
+
+set -o pipefail
+
+DB_SERVERS=(
+{% for host in groups['wiki'] %}
+    "user@{{ hostvars[host]['ansible_host'] }}"
+{% endfor %}
+)
+
+BACKUP_ROOT="/home/user/backups/postgres"
+RETENTION_DAYS=30
+
+DATE=$(date +%Y%m%d_%H%M%S)
+DB_NAME="$1"
+DB_USER="${2:-postgres}"
+
+log_error() { echo "ERROR [$(date '+%Y-%m-%d %H:%M:%S')]: $1" >&2; }
+log_info()  { echo "INFO  [$(date '+%Y-%m-%d %H:%M:%S')]: $1"; }
+
+backup_host_db() {
+    local host="$1"  
+    local host_name
+    host_name=$(ssh -o ConnectTimeout=5 "${host}" "hostname" 2>/dev/null | tr -d '\r\n[:space:]')
+    local local_dest_dir="${BACKUP_ROOT}/${host_name}"
+    local archive_name="${host_name}_pg_db_${DATE}.sql.gz"
+
+    echo "=== ${host} ==="
+
+    ssh -t "${host}" "sudo su - postgres -c 'command -v pg_dump && pg_isready -h localhost -U ${DB_USER}'" 2>/dev/null
+    if [ $? -ne 0 ]; then
+        log_error "Хост ${host} недоступен, не найден pg_dump или PostgreSQL не принимает подключения под postgres."
+        return 1
+    fi
+
+    mkdir -p "${local_dest_dir}"
+
+    log_info "Запуск pg_dump и скачивание..."
+    ssh -t "${host}" "sudo su - postgres -c 'pg_dump -U ${DB_USER} -d ${DB_NAME}'" 2>/dev/null | gzip > "${local_dest_dir}/${archive_name}"
+    
+    if [ $? -ne 0 ]; then
+        log_error "Ошибка при создании или передаче дампа базы данных с хоста ${host}."
+        rm -f "${local_dest_dir}/${archive_name}"
+        return 1
+    fi
+
+    log_info "Очистка бэкапов старше ${RETENTION_DAYS}..."
+    find "${local_dest_dir}" -name "${host_name}_pg_db_*.sql.gz" -mtime +"${RETENTION_DAYS}" -delete
+
+    log_info "Бэкап БД для ${host} успешно завершен."
+}
+
+if [ -z "${DB_NAME}" ]; then
+    log_error "Не указано имя базы данных."
+    exit 1
+fi
+
+for server in "${DB_SERVERS[@]}"; do
+    backup_host_db "${server}"
+done

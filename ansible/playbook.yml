@@ -26,6 +26,7 @@
     - role: nginx_proxy
   tags:
     - nginx_proxy
+    - update
 
 - name: Установка Wiki серверов
   hosts: wiki
@@ -34,6 +35,7 @@
   roles:
     - role: wiki_server
   tags:
+    - wiki_server_first_installation
     - wiki_server 
 
 # LocalSetting.php
@@ -42,9 +44,11 @@
   tags:
     - wiki_server
     - wiki_server_LS
+    - update
   vars_prompt:
     - name: local_file_path
       prompt: "Введите путь к файлу LocalSettings.php"
+      default: "~/Загрузки/LocalSettings.php"
       private: false
   tasks:
     - name: Проверка файла
@@ -63,7 +67,7 @@
         mode: '0644'
 
 - name: Настройка основной базы данных
-  hosts: mainWiki
+  hosts: wiki
   vars:
     ssh_key: "{{ lookup('file', '~/.ssh/id_ed25519.pub') }}"
   roles:
@@ -82,20 +86,31 @@
   - wiki_server_replica_db
   - wiki_server_db
 
-# - name: Установка Zabbix агентов
-#   hosts: server
-#   vars:
-#     ssh_key: "{{ lookup('file', '~/.ssh/id_ed25519.pub') }}"
-#   roles:
-#     - role: zabbix_host
-#   tags:
-#     - zabbix_host
+- name: Копирование Скриптов
+  hosts: proxy
+  vars:
+    ssh_key: "{{ lookup('file', '~/.ssh/id_ed25519.pub') }}"
+  roles:
+  - role: backup_scripts
+  tags:
+  - backup_scripts
+  - update
 
-# - name: Установка Zabbix сервера
-#   hosts: proxy
-#   vars:
-#     ssh_key: "{{ lookup('file', '~/.ssh/id_ed25519.pub') }}"
-#   roles:
-#     - role: zabbix_server
-#   tags:
-#     - zabbix_server
+- name: Установка Zabbix сервера
+  hosts: proxy
+  vars:
+    ssh_key: "{{ lookup('file', '~/.ssh/id_ed25519.pub') }}"
+  roles:
+    - role: zabbix_server
+  tags:
+    - zabbix_server
+
+- name: Установка Zabbix агентов
+  hosts: wiki
+  vars:
+    ssh_key: "{{ lookup('file', '~/.ssh/id_ed25519.pub') }}"
+  roles:
+    - role: zabbix_host
+  tags:
+    - zabbix_host
+    - update

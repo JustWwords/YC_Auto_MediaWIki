@@ -8,7 +8,7 @@
 
 - name: Удаление Базы
   ansible.builtin.file:
-    path: /var/lib/postgresql/16/main
+    path: /var/lib/postgresql/16/main/
     state: absent
   become: true
 

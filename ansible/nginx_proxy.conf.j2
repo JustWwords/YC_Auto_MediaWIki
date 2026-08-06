@@ -1,13 +1,13 @@
+user www-data;
+
 events {}
 
 http {
     upstream WikiServer {
         least_conn;
-        {% for host in groups['server'] %}
-        {% if host != 'vm_1' %}
+    {% for host in groups['wiki'] %}
         server {{ hostvars[host]['ansible_host'] }}:80;
-        {% endif %}
-        {% endfor %}
+    {% endfor %}
     }
 
     server {
@@ -24,4 +24,7 @@ http {
             return 301 http://$host/mediawiki/mediawiki-1.46.0/;
         }
     }
+
+    include /etc/nginx/mime.types; 
+    include /etc/zabbix/nginx.conf;
 }

@@ -1,2 +1,114 @@
 ---
-# tasks file for zabbix_server
+- name: Установка пакетов
+  become: true
+  ansible.builtin.apt:
+    name:
+      - postgresql
+      - postgresql-client
+      - python3-psycopg2
+      - wget
+      - acl
+    update_cache: yes
+    state: present
+
+- name: Запуск и включение службы PostgreSQL
+  become: true
+  ansible.builtin.systemd:
+    name: postgresql
+    state: started
+    enabled: yes
+
+- name: Создание пользователя zabbix
+  become: true
+  community.postgresql.postgresql_user:
+    name: zabbix
+    password: "{{ zabbix_db_password }}"
+    role_attr_flags: "LOGIN"
+  become_user: postgres
+
+- name: Создание базы данных Zabbix
+  become: true
+  community.postgresql.postgresql_db:
+    name: zabbix
+    owner: zabbix
+  become_user: postgres
+
+- name: Скачивание репозитория Zabbix
+  become: true
+  ansible.builtin.get_url:
+    url: "https://repo.zabbix.com/zabbix/7.4/release/ubuntu/pool/main/z/zabbix-release/zabbix-release_latest_7.4+ubuntu24.04_all.deb"
+    dest: /tmp/zabbix-release.deb
+    mode: '0644'
+
+- name: Установка пакета репозитория Zabbix
+  become: true
+  ansible.builtin.apt:
+    deb: /tmp/zabbix-release.deb
+
+- name: Установка компонентов
+  become: true
+  ansible.builtin.apt:
+    name:
+      - zabbix-server-pgsql
+      - zabbix-frontend-php
+      - php8.3-pgsql
+      - zabbix-nginx-conf
+      - zabbix-sql-scripts
+      - zabbix-agent
+    update_cache: yes
+    state: present
+
+- name: Проверка, импортирована ли схема БД
+  become: true
+  ansible.builtin.stat:
+    path: /etc/zabbix/.schema_imported
+  register: schema_status
+
+- name: Импорт начальной схемы и данных в локальную БД
+  become: true
+  ansible.builtin.shell: >
+    zcat /usr/share/zabbix/sql-scripts/postgresql/server.sql.gz | 
+    PGPASSWORD="{{ zabbix_db_password }}" psql -h localhost -U zabbix -d zabbix
+  when: not schema_status.stat.exists
+  register: import_result
+
+- name: Создание флага успешного импорта схемы
+  become: true
+  ansible.builtin.file:
+    path: /etc/zabbix/.schema_imported
+    state: touch
+    mode: '0600'
+  when: import_result.changed
+
+- name: Настройка DBHost в zabbix_server.conf
+  become: true
+  ansible.builtin.lineinfile:
+    path: /etc/zabbix/zabbix_server.conf
+    regexp: '^# DBHost='
+    line: "DBHost=localhost"
+
+- name: Настройка DBPassword в zabbix_server.conf
+  become: true
+  ansible.builtin.lineinfile:
+    path: /etc/zabbix/zabbix_server.conf
+    regexp: '^# DBPassword='
+    line: "DBPassword={{ zabbix_db_password }}"
+
+- name: Настройка Nginx для Zabbix
+  become: true
+  ansible.builtin.replace:
+    path: /etc/zabbix/nginx.conf
+    regexp: '#\s*listen 8080;'
+    replace: 'listen 8080;'
+
+- name: Включение служб и их перезапуск
+  become: true
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    state: restarted
+    enabled: yes
+  loop:
+    - zabbix-server
+    - zabbix-agent
+    - nginx
+    - php8.3-fpm

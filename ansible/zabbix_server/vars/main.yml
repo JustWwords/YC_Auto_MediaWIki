@@ -1,2 +1,3 @@
 ---
 # vars file for zabbix_server
+zabbix_db_password: "pass123"
