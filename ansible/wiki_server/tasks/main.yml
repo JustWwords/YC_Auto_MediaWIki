@@ -42,7 +42,6 @@
     name: wikiuser
     password: "pass123"
     db: my_wiki
-    priv: "ALL"
     state: present
     login_user: postgres
   become: true
