@@ -2,6 +2,8 @@
 
 [Требования к проекту](Project_Requirements.md) | [Инструкция по установке](Installation.md) | [Инструкция по устранению неисправностей](Errors.md)
 
+![](MediaWiki.png)
+
 ## Terraform
 Terraform сам создаёт на Yandex Cloud 2+ машины для:
  * MediaWiki 
